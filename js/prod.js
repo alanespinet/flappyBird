@@ -13,31 +13,69 @@ function Bird(x, y) {
 
   this.currentSprite = 0;
   this.updates = 0;
+  this.angle = 0;
+  this.spriteWidth = 45;
+  this.spriteHeight = 32;
+  this.dead = false;
   this.initControls();
 }
 
 Bird.prototype.update = function () {
   this.speedY += this.gravity;
   this.updates++;
+  this.angle = this.speedY * Math.PI / 100;
 
   if (this.updates % 5 === 0) this.currentSprite = (this.currentSprite + 1) % this.sprites.length;
 
   this.y += this.speedY;
   if (this.y < 0) this.y = 0;
+  if (this.y > 1000) this.dead = true;
 };
 
 Bird.prototype.render = function (ctx) {
-  ctx.drawImage(this.sprites[this.currentSprite], this.x, this.y, 45, 32);
+  ctx.save();
+  ctx.translate(this.x, this.y);
+  ctx.rotate(this.angle);
+  ctx.drawImage(this.sprites[this.currentSprite], -this.spriteWidth / 2, -this.spriteHeight / 2, 45, 32);
+  ctx.restore();
+};
+
+Bird.prototype.detectCollisions = function (pipes) {
+  var _this = this;
+
+  var collisionDetected = false;
+  pipes.forEach(function (pipe, index) {
+    if (pipe.y < 10) {
+      var a = _this.x + _this.spriteWidth / 2;
+      var b = _this.y - _this.spriteHeight / 2;
+
+      var x0 = pipe.x;
+      var y0 = pipe.y + pipe.h;
+      var x1 = x0 + pipe.w;
+      collisionDetected = collisionDetected || a > x0 && a < x1 && b < y0;
+    } else {
+      var _a = _this.x + _this.spriteWidth / 2;
+      var _b = _this.y - _this.spriteHeight / 2;
+
+      var _x = pipe.x;
+      var y1 = pipe.y;
+      var _x2 = _x + pipe.w;
+      collisionDetected = collisionDetected || _a > _x && _a < _x2 && _b > y1;
+    }
+  });
+  if (collisionDetected) {
+    this.dead = true;
+  }
 };
 
 Bird.prototype.initControls = function () {
-  var _this = this;
+  var _this2 = this;
 
   window.addEventListener("keydown", function (e) {
-    if (e.keyCode === 32) _this.speedY = -15;
+    if (e.keyCode === 32) _this2.speedY = -15;
   });
   window.addEventListener("touchstart", function (e) {
-    _this.speedY = -15;
+    _this2.speedY = -15;
   });
 };
 
@@ -150,24 +188,32 @@ window.onload = function () {
   setInterval(_PipeGenerator2.default, 3000, pipes);
 
   function initGameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!bird.dead) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    _Scene2.default.update();
-    _Scene2.default.render(ctx);
+      _Scene2.default.update();
+      _Scene2.default.render(ctx);
 
-    bird.update();
-    bird.render(ctx);
+      bird.update();
+      bird.detectCollisions(pipes);
+      bird.render(ctx);
 
-    pipes.forEach(function (pipe, i) {
-      if (pipe.x < -pipe.width) {
-        delete pipes[i];
-      } else {
-        pipe.update();
-        pipe.render(ctx);
-      }
-    });
+      pipes.forEach(function (pipe, i) {
+        if (pipe.x < -pipe.width) {
+          delete pipes[i];
+        } else {
+          pipe.update();
+          pipe.render(ctx);
+        }
+      });
 
-    window.requestAnimationFrame(initGameLoop);
+      window.requestAnimationFrame(initGameLoop);
+    } else {
+      ctx.fillStyle = 'red';
+      ctx.font = '100px Helvetica';
+      ctx.fillText("Has Perdido!", 230, 250);
+      ctx.fillStyle = 'white';
+    }
   }
 
   initGameLoop();

@@ -12,25 +12,34 @@ window.onload = function(){
   setInterval(generatePipe, 3000, pipes);
 
   function initGameLoop(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if(!bird.dead){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    scene.update();
-    scene.render(ctx);
+      scene.update();
+      scene.render(ctx);
 
-    bird.update();
-    bird.render(ctx);
+      bird.update();
+      bird.detectCollisions(pipes);
+      bird.render(ctx);
 
-    pipes.forEach(function(pipe, i){
-      if(pipe.x < -pipe.width){
-        delete pipes[i];
-      }
-      else {
-        pipe.update();
-        pipe.render(ctx);
-      }
-    });
+      pipes.forEach(function(pipe, i){
+        if(pipe.x < -pipe.width){
+          delete pipes[i];
+        }
+        else {
+          pipe.update();
+          pipe.render(ctx);
+        }
+      });
 
-    window.requestAnimationFrame(initGameLoop);
+      window.requestAnimationFrame(initGameLoop);
+    }
+    else {
+      ctx.fillStyle = 'red';
+      ctx.font = '100px Helvetica';
+      ctx.fillText("Has Perdido!", 230, 250);
+      ctx.fillStyle = 'white';
+    }
   }
 
   initGameLoop();
